@@ -2,7 +2,7 @@
 
 header('Content-Type: application/json');
 
-// 1️⃣ Récupération de l’ID envoyé par le client
+// Récupération de l’ID envoyé par le client
 if (!isset($_GET['mail_id'])) {
     echo json_encode([
         "success" => false,
@@ -13,10 +13,10 @@ if (!isset($_GET['mail_id'])) {
 
 $mailId = $_GET['mail_id'];
 
-// 2️⃣ ID DU VRAI MAIL SUSPECT (CELUI AVEC phishing: true)
+// ID DU VRAI MAIL SUSPECT (CELUI AVEC phishing: true)
 $phishingId = 'm4'; 
 
-// 3️⃣ Vérification
+// Vérification
 if ($mailId === $phishingId) {
     echo json_encode([
         "success" => true

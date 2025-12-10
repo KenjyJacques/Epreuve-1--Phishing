@@ -1,9 +1,11 @@
-// Contenu des e-mails
+// ==========================================
+// 1. DONNÉES DES EMAILS
+// ==========================================
 const emails = [
   {
     id: 'm1',
     fromName: 'Sébastien — RH Université des Antilles',
-    fromEmail: 'rh@universite-example.edu',
+    fromEmail: 'rh@univ-antilles.fr',
     subject: 'Validation de ta demande de congés',
     date: '2025-11-25',
     body: `<p>Bonjour,</p>
@@ -16,7 +18,7 @@ const emails = [
   {
     id: 'm2',
     fromName: 'Lisa — Collègue',
-    fromEmail: 'lisa.bessard@uni-antilles.fr',
+    fromEmail: 'lisa.bessard@univ-antilles.fr',
     subject: 'Compte rendu réunion — action requise',
     date: '2025-11-30',
     body: `<p>Salut,</p>
@@ -141,33 +143,45 @@ const emails = [
   }
 ];
 
-// State
+// ==========================================
+// 2. ÉTAT GLOBAL (STATE)
+// ==========================================
 let current = null;
 let startTime = Date.now();
 let timerInterval = null;
 let flagged = null;
+let currentBox = 'inbox'; // Boîte par défaut
 
 // Utils
 const el = (q) => document.querySelector(q);
 const esc = (str) => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// Render mail list
-let currentBox = 'inbox';
+// ==========================================
+// 3. FONCTIONS D'AFFICHAGE
+// ==========================================
 
+// Affiche la liste des mails (filtre par boîte et texte)
 function renderList(filter='') {
   const list = el('#mailList');
   list.innerHTML = '';
   const f = filter.trim().toLowerCase();
 
   emails.forEach(mail => {
-    // ✅ Filtre par catégorie
+    // 1. Filtre par onglet (Réception, Promo, Spam)
     if(mail.box !== currentBox) return;
 
-    // ✅ Filtre texte
+    // 2. Filtre par recherche texte
     if(f && !(`${mail.fromName} ${mail.fromEmail} ${mail.subject}`.toLowerCase().includes(f))) return;
 
+    // 3. Création de l'élément HTML
     const item = document.createElement('div');
-    item.className = 'mail-item unread';
+    
+    // GESTION DE L'ÉTAT LU/NON LU
+    // Si mail.isRead est true, on ne met pas la classe 'unread'
+    // Sinon, on met 'unread' (barre bleue)
+    const statusClass = mail.isRead ? '' : 'unread';
+    item.className = `mail-item ${statusClass}`;
+    
     item.dataset.id = mail.id;
     item.innerHTML = `
       <div style="flex:1" class="mail-meta">
@@ -176,16 +190,19 @@ function renderList(filter='') {
       </div>
       <div class="mail-date">${mail.date}</div>
     `;
+
+    // Clic pour ouvrir le mail
     item.addEventListener('click', () => openMail(mail.id));
     list.appendChild(item);
   });
 }
 
 
-// Open mail and show analysis
+// Ouvre un mail spécifique
 function openMail(id) {
   current = emails.find(m => m.id === id);
 
+  // Mise à jour de l'affichage central
   el('#welcome').style.display = 'none';
   el('#mailContent').style.display = 'block';
   el('#subject').textContent = current.subject;
@@ -194,7 +211,7 @@ function openMail(id) {
   el('#date').textContent = current.date;
   el('#body').innerHTML = current.body;
 
-  // BOUTONS RÉPONDRE / TRANSFÉRER
+  // --- A. Ajout des boutons Répondre/Transférer ---
   const oldBtns = document.querySelector('#replyForwardBtns');
   if (oldBtns) oldBtns.remove();
 
@@ -209,24 +226,28 @@ function openMail(id) {
   btnReply.style.border = '1px solid rgba(255,255,255,0.2)';
   btnReply.style.background = 'transparent';
   btnReply.style.color = 'inherit';
-  btnReply.style.cursor = 'default';
+  btnReply.style.cursor = 'default'; // Inactif pour la démo
 
   const btnForward = document.createElement('button');
   btnForward.textContent = '↪ Transférer';
   btnForward.style.border = '1px solid rgba(255,255,255,0.2)';
   btnForward.style.background = 'transparent';
   btnForward.style.color = 'inherit';
-  btnForward.style.cursor = 'default';
+  btnForward.style.cursor = 'default'; // Inactif pour la démo
 
   replyForward.appendChild(btnReply);
   replyForward.appendChild(btnForward);
   el('#body').appendChild(replyForward);
 
-  // MARQUER COMME LU
+  // --- B. Gestion de l'état "LU" ---
+  // On sauvegarde l'état dans l'objet mail pour qu'il s'en souvienne
+  current.isRead = true; 
+  
+  // On met à jour l'interface (enlève la barre bleue)
   const item = document.querySelector(`.mail-item[data-id="${id}"]`);
   if (item) item.classList.remove('unread');
 
-  // AFFICHAGE DES PIÈCES JOINTES
+  // --- C. Affichage des pièces jointes ---
   const attachBox = el('#attachmentsArea');
   attachBox.innerHTML = '';
 
@@ -253,22 +274,25 @@ function openMail(id) {
     attachBox.style.display = 'none';
   }
 
-  // GESTION DU BOUTON SIGNALER
+  // --- D. État du bouton Signaler ---
   const btnReport = el('#btnReport');
 
   if (flagged) {
     if (current.id === flagged) {
+      // Si c'est le mail qu'on a signalé et gagné
       btnReport.textContent = 'Signalé';
       btnReport.style.background = 'linear-gradient(90deg, var(--success), #10b981)';
       btnReport.style.color = '#04261a';
       btnReport.disabled = true;
     } else {
+      // Les autres mails sont bloqués car le jeu est fini
       btnReport.textContent = 'Signaler comme frauduleux';
       btnReport.style.background = 'linear-gradient(90deg, var(--error), #f43f5e)';
       btnReport.style.color = '#2b1016';
       btnReport.disabled = true;
     }
   } else {
+    // Jeu en cours
     btnReport.textContent = 'Signaler comme frauduleux';
     btnReport.style.background = 'linear-gradient(90deg, var(--error), #f43f5e)';
     btnReport.style.color = '#2b1016';
@@ -276,12 +300,16 @@ function openMail(id) {
   }
 }
 
-// 1. ÉTAPE DE CONFIRMATION
+// ==========================================
+// 4. LOGIQUE DE SIGNALEMENT & POPUP
+// ==========================================
+
+// Étape 1 : Demande de confirmation
 function askConfirmation() {
   if (!current) return alert("Ouvre un e-mail d'abord.");
-  if (flagged) return; // Déjà signalé
+  if (flagged) return; // Le jeu est déjà fini
 
-  // Création dynamique du popup
+  // Création du popup
   const overlay = document.createElement('div');
   overlay.className = 'popup-overlay';
   
@@ -298,19 +326,18 @@ function askConfirmation() {
 
   document.body.appendChild(overlay);
 
-  // Gestion des clics sur les boutons du popup
+  // Listeners des boutons du popup
   document.getElementById('popCancel').addEventListener('click', () => {
     overlay.remove();
   });
 
   document.getElementById('popConfirm').addEventListener('click', () => {
     overlay.remove();
-    processReport(); // Lancer la vraie fonction
+    processReport(); // Lancer la vérification
   });
 }
 
-
-// 2. ÉTAPE DU SIGNALEMENT RÉEL (Appel Serveur)
+// Étape 2 : Vérification via PHP
 function processReport() {
   const btnReport = el('#btnReport');
 
@@ -318,23 +345,23 @@ function processReport() {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        // ✅ C'EST GAGNÉ
+        // --- VICTOIRE ---
         current.reported = true;
         flagged = current.id;
         stopTimer();
 
-        // Feedback bouton
+        // Mise à jour visuelle du bouton
         btnReport.textContent = 'Signalé';
         btnReport.style.background = 'linear-gradient(90deg, var(--success), #10b981)';
         btnReport.style.color = '#04261a';
         btnReport.disabled = true;
 
-        // Alerte finale
+        // Alerte JS
         const finalTime = el('#timer').textContent;
         alert(`✅ SUCCÈS !\n\nTu as correctement identifié l'e-mail de phishing.\nTemps réalisé : ${finalTime}`);
 
       } else {
-        // ❌ C'EST PERDU
+        // --- DÉFAITE ---
         alert("⛔ Erreur.\nCe n'est pas le bon e-mail. Ce message est légitime.");
       }
     })
@@ -345,7 +372,10 @@ function processReport() {
 }
 
 
-// Timer
+// ==========================================
+// 5. TIMER & ÉVÉNEMENTS
+// ==========================================
+
 function startTimer() {
   timerInterval = setInterval(() => {
     const diff = Math.floor((Date.now() - startTime) / 1000);
@@ -362,37 +392,54 @@ function stopTimer() {
   }
 }
 
-
-// Event listeners
+// Listeners globaux
 el('#filter').addEventListener('input', (e) => renderList(e.target.value));
+
 el('#reset').addEventListener('click', () => {
   el('#filter').value = '';
   renderList('');
 });
 
-// MODIFICATION ICI : On appelle askConfirmation au lieu de reportCurrent
+// Bouton principal de signalement -> lance le Popup
 el('#btnReport').addEventListener('click', askConfirmation);
 
+// Bouton Marquer comme lu / non lu
 el('#btnMark').addEventListener('click', () => {
   if(!current) return alert('Ouvre un e-mail.');
+  
+  // Inverse l'état dans les données
+  current.isRead = !current.isRead;
+
+  // Applique visuellement tout de suite
   const item = document.querySelector(`.mail-item[data-id="${current.id}"]`);
-  if(item) item.classList.toggle('unread');
+  if(item) {
+    if(current.isRead) {
+      item.classList.remove('unread');
+    } else {
+      item.classList.add('unread');
+    }
+  }
 });
 
-// Initialize
-renderList();
-startTimer();
-openMail(emails[0].id);
-
+// Gestion des onglets (Tabs)
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-
+    // 1. Change le style des boutons
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
+    // 2. Change la boîte courante
     currentBox = btn.dataset.box;
 
+    // 3. Reset filtre et rafraîchit la liste
     el('#filter').value = '';
     renderList();
   });
 });
+
+// ==========================================
+// 6. INITIALISATION
+// ==========================================
+renderList(); // Affiche la Inbox par défaut
+startTimer(); // Lance le chrono
+openMail(emails[0].id); // Ouvre le premier mail automatiquement

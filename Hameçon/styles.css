@@ -27,7 +27,6 @@ body {
 
 .app {
   display: grid;
-  /* MODIFICATION : 2 colonnes seulement (Gauche Fixe | Reste Flexible) */
   grid-template-columns: 320px 1fr;
   gap: 18px;
   padding: 12px;
@@ -68,9 +67,9 @@ body {
 }
 
 .tab-btn.active {
-  background: linear-gradient(90deg, var(--accent-pink), var(--accent-blue));
+  background: rgba(4, 0, 255, 0.336);
   border: 1px solid rgb(255, 255, 255);
-  color: var(--bg);
+  color: #fff;
 }
 
 .search {
@@ -137,12 +136,17 @@ body {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  border: 1px solid transparent;
+  
+  /* MODIFICATIONS ICI : */
+  background: rgba(255, 255, 255, 0.02); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+  
   transition: all 0.2s;
 }
 
 .mail-item:hover {
-  background: rgba(252,16,202,0.05);
+  background: rgba(16, 126, 252, 0.08); 
+  border-color: rgba(20, 16, 252, 0.3); 
 }
 
 .mail-item.unread {
@@ -254,19 +258,14 @@ footer {
   text-align: center;
 }
 
-/* ... Tout ton CSS existant ... */
-
-/* =========================
-   ✅ POPUP DE CONFIRMATION
-========================= */
 .popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(5, 5, 17, 0.85); /* Fond sombre transparent */
-  backdrop-filter: blur(4px); /* Petit effet de flou moderne */
+  background: rgba(5, 5, 17, 0.85);
+  backdrop-filter: blur(4px); 
   display: flex;
   align-items: center;
   justify-content: center;
